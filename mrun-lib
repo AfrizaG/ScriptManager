@@ -1,0 +1,154 @@
+#!/bin/bash
+
+# The method or function that can use ;
+
+# addScript
+# runScript
+# removeScript
+# editor
+# infoScript
+# showScripts
+
+configuration=$(cat <<-END
+{
+    "author": "Afriza", 
+	"editor": "/opt/sublime_text/sublime_text --new-window",
+	"directory": "$HOME/ScriptManager",
+	"shebang": "#!/bin/bash"
+
+}
+END
+)
+
+ # Note : 
+  	# please edit the configuration.
+ 	# it caused we use use different distribution
+
+ # Explaination:
+ 	# editor : (default is nano)
+ 		# it is the code editor that used for edit the script.
+ 		# so u can use the path of editor and the option too
+ 		# or you can just type the installed editor in bin 
+ 		# (example =>  "editor" : "code" for vscode). the default is nano
+
+ 	# directory : (default is in $HOME/ScriptManager)
+ 		# it will be the directory where the script will be
+ 		# saved and will be execute
+
+ 	# shebang : (there's no default)
+ 		# the shebang in every distro were different so use 
+ 		# your distro shebang. in this configuration I use
+ 		# Arch Linux
+
+
+### PROGRAM ###
+
+author=`sed -e 's/^"//' -e 's/"$//' <<<"$(echo "$configuration" | jq .author)"`
+editor=`sed -e 's/^"//' -e 's/"$//' <<<"$(echo "$configuration" | jq .editor)"`
+directory=`sed -e 's/^"//' -e 's/"$//' <<<"$(echo "$configuration" | jq .directory)"`
+shebang=`sed -e 's/^"//' -e 's/"$//' <<<"$(echo "$configuration" | jq .shebang)"`
+
+addScript(){
+
+	echo "== ADD A SCRIPT =="
+	echo -n "name : ";read scriptName
+	
+	if test -f "$directory/$scriptName"; then
+    	echo "$scriptName exists."
+    	exit
+	fi
+
+	echo -n "desc : "; read desc
+	
+	echo -n "Make the script [ $scriptName ] ? (y/n) : "; read confirm
+	if [[ $confirm == 'y' || $confirm == 'yes' || $confirm == 'Y' ]]; then
+		
+		echo "Making a shebang..."
+		touch $directory/$scriptName
+		echo "$shebang" > $directory/$scriptName
+
+		echo "Making information..."
+		sleep 1
+
+		# make information in json
+		echo -e "\n\ninformation='{\n    \"name\":\"$scriptName\",\n    \"by\":\"$author\",\n    \"date\":\"$(date)\",\n    \"desc\":\"$desc\" \n}' " >> $directory/$scriptName
+		echo -e "#####==IMPORTANT==#####" >> $directory/$scriptName
+		echo -e "if [[ \$1 == INFO ]]; then    echo \"\$information\";    exit fi" >> $directory/$scriptName
+		echo -e "#####==IMPORTANT==#####" >> $directory/$scriptName
+		echo "Making executable..."
+		chmod +x $directory/$scriptName
+		echo "$scriptName added"
+
+	else 
+		echo "There's no new added script"
+		exit
+	fi
+}
+
+runScript(){
+	scriptName=$1
+	if test -f "$directory/$scriptName"; then
+    	$directory/$scriptName
+    	echo -e "\n$scriptName ended"
+    else 
+    	echo "run : $scriptName doesn't exist"
+	fi
+}
+
+removeScript(){
+	scriptName=$1
+	if test -f "$directory/$scriptName"; then
+
+		echo -n "Remove the script [ $scriptName ] ? (y/n) : "; read confirm
+		if [[ $confirm == 'y' || $confirm == 'yes' || $confirm == 'Y' ]]; then
+			echo "removing $scriptName..."
+			sleep 3
+			rm $directory/$scriptName
+			echo "$scriptName has been removed"			
+		fi
+
+	else
+		echo "remove : $scriptName doesn't exist"
+		echo "There's no newest removed script"
+	fi
+}
+
+editScript(){
+	scriptName=$1
+	if test -f "$directory/$scriptName"; then
+   	
+		echo -n "Edit the script [ $scriptName ] ? (y/n) : "; read confirm
+		if [[ $confirm == 'y' || $confirm == 'yes' || $confirm == 'Y' ]]; then
+			echo "Opening editor $editor for $scriptName..."
+			sleep 2
+			$editor $directory/$scriptName	
+			echo -e "\nYou edited the script [ $scriptName ]"
+		else
+			echo "There's no change"
+		fi
+
+    else 
+    	echo "Can't edit $scriptName : the script doesn't exist"
+		echo "There's no change"
+	fi
+}
+
+infoScript(){
+	scriptName=$1
+	specific=".$2"
+	if test -f "$directory/$scriptName"; then
+		$directory/$scriptName INFO | jq $specific
+    else 
+    	echo "info : $scriptName doesn't exist"
+	fi
+
+	# echo $scriptName
+	# echo $specific
+}
+
+showScripts(){
+	listedScript=`sed -e 's/^"//' -e 's/"$//' <<<"$directory"`
+	for scriptName in "$listedScript"/*; do
+		echo  $(basename $scriptName)
+	done
+}

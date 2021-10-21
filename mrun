@@ -1,0 +1,92 @@
+#!/bin/bash
+
+
+. mrun-lib
+
+showHelp(){
+  echo -e "\nUsage : 
+  mrun <option> [scriptname]
+  or
+  mrun [scriptname]\n
+Option :
+--add  | -a ) add a new script
+--edit | -e ) edit script
+--info | -i ) see information of script
+--remove | -r ) remove a script
+\n no argument needed:
+--list | -l ) show all scripts
+--help | -h ) show this help
+
+usage for --info | -i :\n --info [scriptname] <specific> 
+afad
+sadad
+"
+}
+
+
+
+option(){
+  for arg in "$@"; do
+    shift
+    case "$arg" in
+      "--add") set -- "$@" "-a" ;;
+      "--remove") set -- "$@" "-r" ;;
+  		"--list") set -- "$@" "-l";;
+      "--edit") set -- "$@" "-e";;
+      "--info") set -- "$@" "-i";;
+      "--help") set -- "$@" "-h";;
+      *)        set -- "$@" "$arg";;
+    esac
+  done
+
+  while getopts "hlar:e:i:" option
+  do
+      case $option in
+        a ) addScript
+            ;;
+        
+        l ) showScripts 
+            ;;
+        
+        h ) showHelp
+            ;;
+
+        r ) scriptName=${OPTARG}
+            removeScript $scriptName 1
+            ;;
+        
+        e ) scriptName=${OPTARG}
+            editScript $scriptName 1
+            ;;
+
+        i ) scriptName=${OPTARG}
+            infoScript $scriptName $3
+            ;;
+      esac
+  done
+}
+
+theFirstArgisOption(){
+  args=(-a -l -r -i -h --add --help --remove --list --edit --info -- )
+  for firstArg in  "${args[@]}"; do
+    if [[ $1 == $firstArg ]]; then
+      return 0
+    fi
+  done
+  return 1
+}
+
+if $(theFirstArgisOption $1); then
+  option $*
+elif [[ $1 == "-e" ]]; then
+  option $*
+elif [[ ${1:0:1} == "-" || ${1:0:2} == "--" ]]; then
+  echo "mrun: invalid option for ($1)"
+  echo "use 'mrun --help' for help"
+elif [[ $1 == "" ]]; then
+  showHelp
+else
+  runScript $1
+fi
+
+
